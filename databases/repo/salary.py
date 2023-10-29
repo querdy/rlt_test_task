@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 from loguru import logger
 from pymongo.collection import Collection
@@ -16,7 +16,7 @@ GROUP_TYPE_FORMATS_MAPPER: dict = {
 
 TIMEDELTA_MAPPER: dict = {
     "month": timedelta(),
-    "day": timedelta(),
+    "day": timedelta(days=1),
     "hour": timedelta(hours=1),
 }
 
@@ -37,7 +37,10 @@ class SalaryRepo:
                     "unit": data.group_type,
                     "bounds": [
                         data.dt_from,
-                        data.dt_upto + TIMEDELTA_MAPPER.get(data.group_type)
+                        (
+                            (data.dt_upto + TIMEDELTA_MAPPER.get(data.group_type))
+                            if data.dt_upto.time() == time(hour=0, minute=0, second=0) else data.dt_upto
+                        )
                     ]
                 }
             }},

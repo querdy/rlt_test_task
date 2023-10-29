@@ -1,3 +1,5 @@
+import json
+
 import pydantic
 from aiogram import Router
 from aiogram.types import Message
@@ -17,7 +19,7 @@ async def aggregate_payments_handler(message: Message, db: Database):
         aggregated_data: ResponseAggregateSchema = db.salary.aggregate(
             data=request_data
         )
-        answer: str = f"{aggregated_data.model_dump()}"
+        answer: str = f"{json.dumps(aggregated_data.model_dump())}"
         await message.answer(
             answer if len(answer) < settings.MESSAGE_MAX_LENGTH else REDUCE_THE_SELECTION
         )
