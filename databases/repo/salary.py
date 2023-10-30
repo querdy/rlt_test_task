@@ -1,9 +1,8 @@
 from datetime import datetime, timedelta, time
 
 from loguru import logger
-from pymongo.collection import Collection
-from pymongo.command_cursor import CommandCursor
-from pymongo.database import Database
+from motor.motor_asyncio import AsyncIOMotorLatentCommandCursor, AsyncIOMotorCollection, AsyncIOMotorDatabase
+
 
 from app.schemas.aggregate import RequestAggregateSchema, ResponseAggregateSchema
 from app.settings import settings
@@ -23,13 +22,13 @@ TIMEDELTA_MAPPER: dict = {
 
 class SalaryRepo:
     def __init__(self, database):
-        self.database: Database = database
-        self.collection: Collection = self.database[settings.COLLECTION_NAME]
+        self.database: AsyncIOMotorDatabase = database
+        self.collection: AsyncIOMotorCollection = self.database[settings.COLLECTION_NAME]
 
-    def aggregate(self, data: RequestAggregateSchema) -> ResponseAggregateSchema:
+    async def aggregate(self, data: RequestAggregateSchema) -> ResponseAggregateSchema:
         dt_format: str = GROUP_TYPE_FORMATS_MAPPER.get(data.group_type)
         logger.info(f"request: {data}")
-        aggregated_results: CommandCursor = self.collection.aggregate([
+        aggregated_results: AsyncIOMotorLatentCommandCursor = self.collection.aggregate([
             {"$match": {"dt": {"$gte": data.dt_from, "$lte": data.dt_upto}}},
             {"$densify": {
                 "field": "dt",
@@ -52,7 +51,7 @@ class SalaryRepo:
             {"$sort": {"_id": 1}},
         ])
         response: ResponseAggregateSchema = ResponseAggregateSchema(dataset=[], labels=[])
-        for result in aggregated_results:
+        for result in await aggregated_results.to_list(length=None):
             response.dataset.append(result.get("total"))
             response.labels.append(datetime.strptime(result.get("_id"), dt_format).isoformat())
         logger.info(f"response: {response}")

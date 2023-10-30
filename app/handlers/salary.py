@@ -14,7 +14,7 @@ router = Router()
 async def aggregate_payments_handler(message: Message, db: Database):
     try:
         request_data = RequestAggregateSchema.model_validate_json(message.text)
-        aggregated_data: ResponseAggregateSchema = db.salary.aggregate(
+        aggregated_data: ResponseAggregateSchema = await db.salary.aggregate(
             data=request_data
         )
         answer: str = f"{aggregated_data.model_dump_json()}"
