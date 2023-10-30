@@ -28,6 +28,7 @@ class SalaryRepo:
 
     def aggregate(self, data: RequestAggregateSchema) -> ResponseAggregateSchema:
         dt_format: str = GROUP_TYPE_FORMATS_MAPPER.get(data.group_type)
+        logger.info(f"request: {data}")
         aggregated_results: CommandCursor = self.collection.aggregate([
             {"$match": {"dt": {"$gte": data.dt_from, "$lte": data.dt_upto}}},
             {"$densify": {
@@ -54,5 +55,5 @@ class SalaryRepo:
         for result in aggregated_results:
             response.dataset.append(result.get("total"))
             response.labels.append(datetime.strptime(result.get("_id"), dt_format).isoformat())
-        logger.info(response)
+        logger.info(f"response: {response}")
         return response
